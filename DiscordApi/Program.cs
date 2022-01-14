@@ -28,14 +28,13 @@ namespace DiscordApi
             });
 
             commands.RegisterCommands<CommandModule>();
-
+            
+                
+            
 
 
             await client.ConnectAsync();
             await Task.Delay(-1);
-
-            
-
 
         }
     }

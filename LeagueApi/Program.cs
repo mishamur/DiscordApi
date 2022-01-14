@@ -23,7 +23,7 @@ namespace LeagueApi
         }
         static async Task MainAsync()
         {
-            const string api_key = "RGAPI-500b978f-cfb1-4536-85c4-0dcf8387c49a";
+            const string api_key = "RGAPI-244e9c20-85ff-402c-99c3-13b70fe00c3a";
 
             var api = MingweiSamuel.Camille.RiotApi.NewInstance($"{api_key}");
 
