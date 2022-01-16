@@ -14,7 +14,7 @@ namespace DiscordApi.LeagueApi
 {
     static class LeagueStat
     {
-        private const string api_key = "RGAPI-a3b50291-fdb4-42e7-b7af-9e75e3063dcd";
+        private const string api_key = "RGAPI-ca925b6d-0c98-4e60-be6d-273112bb48ca";
         public static async Task<StringBuilder> MainAsync(ulong authorId)
         {
             var api = MingweiSamuel.Camille.RiotApi.NewInstance($"{api_key}");
@@ -112,14 +112,20 @@ namespace DiscordApi.LeagueApi
 
             if(isGameEndTime && isGameStartTime)
             {
-                //DateTime timeSpanStart =  DateTime.UnixEpoch.AddSeconds(Convert.ToDouble(gameEndTime.GetRawText().ToString()));
-                //string timeSpanEnd = DateTime.FromBinary(long.Parse(gameEndTime.GetRawText().ToString()));
+                DateTime timeStart =  DateTime.UnixEpoch.AddMilliseconds(Convert.ToDouble(gameStartTime.GetRawText().ToString()));
+                DateTime timeEnd = DateTime.UnixEpoch.AddMilliseconds(Convert.ToDouble(gameEndTime.GetRawText().ToString()));
+                TimeSpan tsStart = TimeSpan.Parse(timeStart.ToString("HH:mm:ss"));
+                TimeSpan tsEnd = TimeSpan.Parse(timeEnd.ToString("HH:mm:ss"));
 
+                resultGameStat.AppendLine("Сведения о матче");
+                resultGameStat.AppendLine($"Время начала: {timeStart.Date.ToLongDateString()} {tsStart}");
+                resultGameStat.AppendLine($"Время окончания: {timeEnd.Date.ToLongDateString()} {tsEnd}");
+                resultGameStat.AppendLine($"Продолжительность игры: {(tsEnd - tsStart)}");
 
-                //resultGameStat.AppendLine("Сведения о матче");
-                //resultGameStat.AppendLine("Время начала:" + timeSpanStart.Date.ToString());
-                //resultGameStat.AppendLine("Время окончания: " + timeSpanEnd.Date.ToString());
-                
+                JsonElement jsonGameMode;
+                bool isGameMode = gameStat.RootElement.TryGetProperty("gameMode", out jsonGameMode);
+                if (isGameMode)
+                    resultGameStat.AppendLine($"Мод: {jsonGameMode.GetRawText().ToString()}");
             }
             return await Task.FromResult(resultGameStat);
 
@@ -185,6 +191,18 @@ namespace DiscordApi.LeagueApi
                 playerStat.Spell1Casts = Convert.ToInt32(spell1Casts.GetRawText());
             }
 
+            JsonElement spell4Casts;
+            if(player.TryGetProperty("spell4Casts", out spell4Casts))
+            {
+                playerStat.Spell4Casts = Convert.ToInt32(spell4Casts.GetRawText());
+            }
+
+            JsonElement timeCCingOthers;
+            if(player.TryGetProperty("timeCCingOthers", out timeCCingOthers))
+            {
+                playerStat.TimeCCingOthers = Convert.ToInt32(timeCCingOthers.GetRawText());
+            }
+
             JsonElement visionScore;
             if (player.TryGetProperty("visionScore", out visionScore))
             {
@@ -201,6 +219,12 @@ namespace DiscordApi.LeagueApi
             if (player.TryGetProperty("totalMinionsKilled", out totalMinionsKilled))
             {
                 playerStat.TotalMinionsKilled = Convert.ToInt32(totalMinionsKilled.GetRawText());
+            }
+
+            JsonElement neutralMinionsKilled;
+            if(player.TryGetProperty("neutralMinionsKilled", out neutralMinionsKilled))
+            {
+                playerStat.NeutralMinionsKilled = Convert.ToInt32(neutralMinionsKilled.GetRawText());
             }
 
             JsonElement totalTimeSpentDead;

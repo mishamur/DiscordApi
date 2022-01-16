@@ -11,7 +11,6 @@ namespace DiscordApi
     public class ApplicationContext : DbContext
     {
         public DbSet<User> Users => Set<User>();
-
         public ApplicationContext()
         {
             Database.EnsureCreated();

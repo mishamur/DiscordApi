@@ -18,12 +18,15 @@ namespace LeagueApi.Models
         public int? PentaKills { get; set; }
         public int? TotalDamageDealtToChampions { get; set; }
         public int? Spell1Casts { get; set; }
+        public int? Spell4Casts { get; set; }
         public int? VisionScore { get; set; }
         public bool Win { get; set;  }
         public int? TotalMinionsKilled { get; set;  }
+        public int? NeutralMinionsKilled { get; set; }
         public int? TotalTimeSpentDead { get; set;  }
         public int? WardsPlaced { get; set; }
         public int? GoldEarned { get; set; }
+        public int? TimeCCingOthers { get; set; }
 
         public StringBuilder GetStat()
         {
@@ -31,12 +34,14 @@ namespace LeagueApi.Models
             stat.AppendLine("Имя призывателя: " + SummonerName);
             stat.AppendLine("Отыграл на: " + ChampionName);
             stat.AppendLine($"КDA: {Kills} / {Deaths} / {Assists}");
-            stat.AppendLine($"Заработал голдишки: " + GoldEarned);
+            stat.AppendLine("Заработал голдишки: " + GoldEarned);
             stat.AppendLine("Нанёс урона вражинам: " + TotalDamageDealtToChampions);
+            stat.AppendLine("Показатель контроля: " + TimeCCingOthers);
             stat.AppendLine("Скастил q-ку: " + Spell1Casts);
+            stat.AppendLine("Скастил r-ку: " + Spell4Casts);
             stat.AppendLine("Показатель обзора " + VisionScore);
             stat.AppendLine("Поставил вардиков: " + WardsPlaced);
-            stat.AppendLine("Нафармил крипчиков: " + TotalMinionsKilled);
+            stat.AppendLine("Нафармил крипчиков: " + (TotalMinionsKilled + NeutralMinionsKilled));
             stat.AppendLine("Чилил в таверне секунд: " + TotalTimeSpentDead);
             if (Win)
                 stat.AppendLine("Изи победная");
