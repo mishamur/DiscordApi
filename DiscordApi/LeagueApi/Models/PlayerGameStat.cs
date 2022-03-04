@@ -10,7 +10,6 @@ namespace DiscordApi.LeagueApi.Models
 {
     public class PlayerGameStat
     {
-        [Key]
         public string MatchId { get; set; } 
         public GameStat? GameStat { get; set; }
         public PlayerStat? PlayerStat { get; set; }

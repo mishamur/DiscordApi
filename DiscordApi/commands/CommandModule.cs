@@ -10,6 +10,7 @@ using DiscordApi.Register;
 using DSharpPlus.Entities;
 using DSharpPlus;
 using System.Drawing;
+using System.IO;
 
 namespace DiscordApi.commands
 {
@@ -64,12 +65,15 @@ namespace DiscordApi.commands
         [Command("sendPicture")]
         public async Task SendPicture(CommandContext context)
         {
+            
             Bitmap bitmap = new Bitmap(200, 200);
             Graphics g = Graphics.FromImage(bitmap);
             g.Clear(Color.Aqua);
-           
-           
-            await context.RespondAsync(@"E:\файлы с флешки\развлечения и проги\туч\JPG\lel.jpg");
+            //new StreamReader(@"E:\pict\lel.jpg");
+
+            DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
+            messageBuilder.WithFile(@"E:\pict\lel.jpg", new StreamReader(@"E:\pict\lel.jpg").BaseStream);
+            await context.RespondAsync(messageBuilder);
         }
 
         [Command("register")]

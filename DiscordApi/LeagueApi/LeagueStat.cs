@@ -117,6 +117,7 @@ namespace DiscordApi.LeagueApi
                             if(user.Puuid == puuid)
                             {
                                 findUser = user;
+                                break;
                             }
                         }
                         if (findUser == null)
@@ -140,6 +141,7 @@ namespace DiscordApi.LeagueApi
                 catch(Exception ex)
                 {
                     Console.WriteLine(ex.Message + " " + ex.StackTrace);
+                    return result.AppendLine("ошибка");
                 }
                 
 
@@ -202,20 +204,27 @@ namespace DiscordApi.LeagueApi
                                             if (('"' + summonerName + '"').Equals(summonerNames))
                                             {
                                                 PlayerStat playerStat = GetPlayerStat(summonerName, player);
-                                                
-                                                using(ApplicationContext db = new ApplicationContext())
+                                                try
                                                 {
-                                                    PlayerGameStat pgs = new PlayerGameStat()
+                                                    using (ApplicationContext db = new ApplicationContext())
                                                     {
-                                                        MatchId = matchId,
-                                                        GameStat = gameStat,
-                                                        PlayerStat = playerStat,
-                                                        UserPuuid = puuid
-                                                    
-                                                    };
-                                                    db.PlayerGameStats.Add(pgs);
-                                                    db.SaveChanges();
+                                                        PlayerGameStat pgs = new PlayerGameStat()
+                                                        {
+                                                            MatchId = matchId,
+                                                            GameStat = gameStat,
+                                                            PlayerStat = playerStat,
+                                                            UserPuuid = puuid
+                                                        };
+                                                        db.PlayerGameStats.Add(pgs);
+                                                        db.SaveChanges();
+                                                    }
                                                 }
+                                                catch(Exception ex)
+                                                {
+                                                    Console.WriteLine(ex.Message);
+                                                    Console.WriteLine(ex.StackTrace);
+                                                }
+                                                
                                                 break;
                                             }                                        
                                     }
@@ -230,14 +239,13 @@ namespace DiscordApi.LeagueApi
                     double countGames = 0;
                     using (ApplicationContext db = new ApplicationContext())
                     {
-                        countWins = 0;
                         db.PlayerGameStats.Select(x => x).Where(x => x.UserPuuid == puuid)
                             .ToList().ForEach(x =>
                             {
                                 if (x.PlayerStat.Win)
                                     countWins++;
                             });
-                        countGames = db.PlayerGameStats.Count();
+                        countGames = db.PlayerGameStats.Where(x => x.UserPuuid == puuid).Count();
 
                     }
 
