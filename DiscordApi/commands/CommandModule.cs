@@ -7,6 +7,9 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DiscordApi.LeagueApi;
 using DiscordApi.Register;
+using DSharpPlus.Entities;
+using DSharpPlus;
+using System.Drawing;
 
 namespace DiscordApi.commands
 {
@@ -18,10 +21,7 @@ namespace DiscordApi.commands
         {
             List<string> helloRespose = new List<string>(new string[] {
             "Салют",
-            "Пошёл нахуй",
             "Оу, давно не виделись",
-            "Чё нада",
-            "Ну чё, поебёмся",
             "Привет",
             "Салам",
         });
@@ -53,6 +53,24 @@ namespace DiscordApi.commands
             await context.RespondAsync($"content: {content}, AuthorId: {context.Message.Author.Id}," +
                  $" GuildId: {context.Guild.Id}");
         } 
+
+        [Command("getwr")]
+        public async Task GetWinrate(CommandContext context, string summonerName)
+        {
+            StringBuilder result = LeagueStat.GetWintate(summonerName).Result;
+            await context.RespondAsync(result.ToString());
+        }
+
+        [Command("sendPicture")]
+        public async Task SendPicture(CommandContext context)
+        {
+            Bitmap bitmap = new Bitmap(200, 200);
+            Graphics g = Graphics.FromImage(bitmap);
+            g.Clear(Color.Aqua);
+           
+           
+            await context.RespondAsync(@"E:\файлы с флешки\развлечения и проги\туч\JPG\lel.jpg");
+        }
 
         [Command("register")]
         public async Task Register(CommandContext context, string content)

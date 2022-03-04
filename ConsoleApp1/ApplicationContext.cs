@@ -6,20 +6,19 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using DiscordApi.LeagueApi.Models;
 
-namespace DiscordApi
+namespace ConsoleApp1
 {
-    public class ApplicationContext : DbContext
+    class ApplicationContext : DbContext
     {
         public DbSet<User> Users => Set<User>();
-        public DbSet<PlayerGameStat> PlayerGameStats =>  Set<PlayerGameStat>();
+        public DbSet<PlayerGameStat> PlayerGameStats => Set<PlayerGameStat>();
         public ApplicationContext()
         {
-           // Database.EnsureCreated();
+            //Database.EnsureCreated();
         }
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=consoleuserdb;Username=postgres;Password={p@ssw0rd}");
         }
-       
     }
 }

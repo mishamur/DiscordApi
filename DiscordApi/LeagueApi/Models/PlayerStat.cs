@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace LeagueApi.Models
 {
-    class PlayerStat
+    [Owned]
+    public class PlayerStat
     { 
         public string SummonerName { get; set; }
         public int? Kills { get; set; }
@@ -46,7 +48,7 @@ namespace LeagueApi.Models
             if (Win)
                 stat.AppendLine("Изи победная");
             else
-                stat.AppendLine("Опять прое*али");
+                stat.AppendLine("Опять проиграли");
             if (PentaKills > 0)
                 stat.AppendLine("Поздравляем с первым и последним пентакиллом в твоей жизни");
             

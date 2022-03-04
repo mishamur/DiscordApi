@@ -17,7 +17,7 @@ namespace DiscordApi
         {
             DiscordClient client = new DiscordClient(new DiscordConfiguration()
             {
-                Token = "OTIyMDMwMDE0MjAxOTg3MDgz.Yb7hXQ._48OK81p_Mqu5Hk72_h23wnDuag",
+                Token = "OTIyMDMwMDE0MjAxOTg3MDgz.Yb7hXQ.aSa7I22vgE1GvhfnvLkePyakMxI",
                 TokenType = TokenType.Bot,
                 Intents = DiscordIntents.AllUnprivileged
             });
@@ -30,9 +30,6 @@ namespace DiscordApi
             commands.RegisterCommands<CommandModule>();
             
                 
-            
-
-
             await client.ConnectAsync();
             await Task.Delay(-1);
 

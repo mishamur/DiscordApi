@@ -11,36 +11,40 @@ namespace DiscordApi.Register
 {
     public static class RegisterUser
     {
-        public static bool RegisterUsers(string SummonerName, ulong AuthorId, ulong GuildId)
+        public static bool RegisterUsers(string summonerName, ulong authorId, ulong guildId)
         {
             using (ApplicationContext db = new ApplicationContext())
             {
                 //db.Database.EnsureDeleted();
-                db.Database.EnsureCreated();
-                string puuid = LeagueStat.GetPuuidByName(SummonerName);
+                //db.Database.EnsureCreated();
+                string puuid = LeagueStat.GetPuuidByName(summonerName);
                 if (puuid != null)
                 {
-                    User user = new User() { SummName = SummonerName, AuthorId = AuthorId, GuildId = GuildId, Puuid = puuid };
-                    if (!db.Users.Contains(user))
+                    
+                    if (db.Users.FirstOrDefault(x => x.Puuid == puuid) == null)
                     {
-                        bool flag = true;
-                        foreach(var value in db.Users)
-                        {
-                            if(value.Puuid == user.Puuid || value.SummName.Equals(user.SummName) || value.AuthorId == user.AuthorId)
-                            {
-                                flag = false;
-                                break;
-                            }
-                        }
 
-                        if (flag)
+                        User user = new User() { SummName = summonerName, AuthorId = authorId, GuildId = guildId, Puuid = puuid };
+                        db.Users.Add(user);
+                        Console.WriteLine(user);
+                        db.SaveChanges();
+                        Console.WriteLine("всё сохранено");
+                        return true;       
+                    }
+                    else
+                    {
+                        User user = db.Users.FirstOrDefault(x => x.Puuid == puuid);
+                        if(!user.SummName.Equals(summonerName) || user.AuthorId == null || user.GuildId == null)
                         {
-                            db.Users.Add(user);
-                            Console.WriteLine(user);
+                            user.AuthorId = authorId;
+                            user.GuildId = guildId;
+                            user.SummName = summonerName;
+                            db.Users.Update(user);
                             db.SaveChanges();
                             Console.WriteLine("всё сохранено");
                             return true;
                         }
+
                     }
                 }
                 Console.WriteLine("ошибка добавления пользователя");

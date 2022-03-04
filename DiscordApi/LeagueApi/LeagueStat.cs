@@ -9,12 +9,13 @@ using MingweiSamuel.Camille;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DiscordApi.LeagueApi.Models;
+using System.Threading;
 
 namespace DiscordApi.LeagueApi
 {
     static class LeagueStat
     {
-        private const string api_key = "RGAPI-ca925b6d-0c98-4e60-be6d-273112bb48ca";
+        private const string api_key = "RGAPI-6873d748-0a5d-42eb-b200-82649f81b763";
         public static async Task<StringBuilder> MainAsync(ulong authorId)
         {
             var api = MingweiSamuel.Camille.RiotApi.NewInstance($"{api_key}");
@@ -91,7 +92,7 @@ namespace DiscordApi.LeagueApi
                 }
 
                 //информация о игре
-                StringBuilder gameStat = await GetGameStat(json);
+                StringBuilder gameStat = new StringBuilder((await GetGameStat(json)).ToString());
                 if(gameStat != null)
                     resultMes.AppendLine(gameStat.ToString());
                 
@@ -100,34 +101,184 @@ namespace DiscordApi.LeagueApi
 
             return await Task.FromResult<StringBuilder>(resultMes);
         }
-
-        private async static Task<StringBuilder> GetGameStat(JsonDocument gameStat)
+        public static async Task<StringBuilder> GetWintate(string summonerName)
         {
-            StringBuilder resultGameStat = new StringBuilder();
+            StringBuilder result = new StringBuilder();
+            string puuid = GetPuuidByName(summonerName);
+            if(puuid != null)
+            {
+                try
+                {
+                    using (ApplicationContext db = new ApplicationContext())
+                    {
+                        User findUser = null;
+                        foreach(var user in db.Users)
+                        {
+                            if(user.Puuid == puuid)
+                            {
+                                findUser = user;
+                            }
+                        }
+                        if (findUser == null)
+                        {
+                            User user = new User { Puuid = puuid, SummName = summonerName };
+                            db.Users.Add(user);
+                            Console.WriteLine("добавил юзера");
+                        }
+                        else
+                        {
+                            if (!summonerName.Equals(findUser.SummName))
+                            {
+                                findUser.SummName = summonerName;
+                                db.Users.Update(findUser);
+                            }
+                        }
+                        db.SaveChanges();
+                        Console.WriteLine("save db");
+                    }
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine(ex.Message + " " + ex.StackTrace);
+                }
+                
+
+
+                var api = MingweiSamuel.Camille.RiotApi.NewInstance($"{api_key}");
+                if(api != null)
+                {
+                    string[] matches = null;
+                    int startCountMatches = 0;
+                    
+                    bool needFindMatches = true;
+                    do
+                    {
+                       
+                        matches = api.MatchV5.GetMatchIdsByPUUID(Region.Europe, puuid, startCountMatches, 100);
+                        Console.WriteLine(matches);
+                        foreach (string matchId in matches)
+                        {
+                            Console.WriteLine(matchId);
+                            PlayerGameStat playerGameStat = null;
+                            using (ApplicationContext db = new ApplicationContext())
+                            {
+                                playerGameStat = db.PlayerGameStats.FirstOrDefault(x => (x.MatchId == matchId &&
+                                x.UserPuuid == puuid));
+                            }
+                            if(playerGameStat != null)
+                            {
+                                needFindMatches = false;
+                                break;
+                            }
+
+                            var match = api.MatchV5.GetMatch(Region.Europe, matchId);
+                            if (match == null)
+                                continue;
+
+                            Dictionary<string, object>.ValueCollection valueCollection = match._AdditionalProperties.Values;
+                            
+                            string gameInfo = valueCollection.ToList().Last().ToString();
+                            JsonDocument json = JsonSerializer.Deserialize<JsonDocument>(gameInfo);
+                            Console.WriteLine( GetGameStat(json).Result.ToString());
+                            GameStat gameStat = GetGameStat(json).Result;
+
+                            JsonElement jsonParticipants;
+                            //берём участников игры
+                            bool isParticipants = json.RootElement.TryGetProperty("participants", out jsonParticipants);
+                            if (isParticipants)
+                            {                              
+                                //преобразуем json в массив данных о игроках
+                                JsonElement.ArrayEnumerator particArray = jsonParticipants.EnumerateArray();
+                              
+                                foreach (var player in particArray)
+                                {
+                                    JsonElement jsonSummName;
+                       
+                                    if (player.TryGetProperty("summonerName", out jsonSummName))
+                                    {
+                                        string summonerNames = jsonSummName.GetRawText().ToString();
+                                            //если нашли в массиве нашего игрока, считаем и победы и
+                                            //записываем статистику в базу данных
+                                            if (('"' + summonerName + '"').Equals(summonerNames))
+                                            {
+                                                PlayerStat playerStat = GetPlayerStat(summonerName, player);
+                                                
+                                                using(ApplicationContext db = new ApplicationContext())
+                                                {
+                                                    PlayerGameStat pgs = new PlayerGameStat()
+                                                    {
+                                                        MatchId = matchId,
+                                                        GameStat = gameStat,
+                                                        PlayerStat = playerStat,
+                                                        UserPuuid = puuid
+                                                    
+                                                    };
+                                                    db.PlayerGameStats.Add(pgs);
+                                                    db.SaveChanges();
+                                                }
+                                                break;
+                                            }                                        
+                                    }
+                                }
+                            }
+                        }
+                        Console.WriteLine("--------------------------");
+                        startCountMatches += 100;
+                    } while (matches.Length != 0 && needFindMatches);
+
+                    double countWins = 0;
+                    double countGames = 0;
+                    using (ApplicationContext db = new ApplicationContext())
+                    {
+                        countWins = 0;
+                        db.PlayerGameStats.Select(x => x).Where(x => x.UserPuuid == puuid)
+                            .ToList().ForEach(x =>
+                            {
+                                if (x.PlayerStat.Win)
+                                    countWins++;
+                            });
+                        countGames = db.PlayerGameStats.Count();
+
+                    }
+
+                    double winrate = 0;
+                    if(countGames > 0)
+                    {
+                        winrate = (double)((int)((double)(countWins / countGames) * 100 * 100)) / 100;
+                    }
+                    return await Task.FromResult( result.AppendLine("результат в консоли").AppendLine("кол-во проанализированных матчей: " + countGames)
+                        .AppendLine($"винрейт: {winrate}%"));
+
+                }
+            }
+            else
+            {
+                return await Task.FromResult(result.AppendLine("такого игрока не существует"));
+            }
+            return await Task.FromResult(result.AppendLine("что-то отвалилось"));
+
+        }
+
+        private static Task<GameStat> GetGameStat(JsonDocument gameStat)
+        {
+            GameStat resultGameStat = new GameStat();
             JsonElement gameStartTime;
             bool isGameStartTime = gameStat.RootElement.TryGetProperty("gameStartTimestamp",out gameStartTime);
 
             JsonElement gameEndTime;
             bool isGameEndTime = gameStat.RootElement.TryGetProperty("gameEndTimestamp", out gameEndTime);
 
-            if(isGameEndTime && isGameStartTime)
+            if( isGameStartTime)
             {
-                DateTime timeStart =  DateTime.UnixEpoch.AddMilliseconds(Convert.ToDouble(gameStartTime.GetRawText().ToString()));
-                DateTime timeEnd = DateTime.UnixEpoch.AddMilliseconds(Convert.ToDouble(gameEndTime.GetRawText().ToString()));
-                TimeSpan tsStart = TimeSpan.Parse(timeStart.ToString("HH:mm:ss"));
-                TimeSpan tsEnd = TimeSpan.Parse(timeEnd.ToString("HH:mm:ss"));
-
-                resultGameStat.AppendLine("Сведения о матче");
-                resultGameStat.AppendLine($"Время начала: {timeStart.Date.ToLongDateString()} {tsStart}");
-                resultGameStat.AppendLine($"Время окончания: {timeEnd.Date.ToLongDateString()} {tsEnd}");
-                resultGameStat.AppendLine($"Продолжительность игры: {(tsEnd - tsStart)}");
-
-                JsonElement jsonGameMode;
-                bool isGameMode = gameStat.RootElement.TryGetProperty("gameMode", out jsonGameMode);
-                if (isGameMode)
-                    resultGameStat.AppendLine($"Мод: {jsonGameMode.GetRawText().ToString()}");
+                resultGameStat.gameStartTimestamp = gameStartTime.GetRawText().ToString();
+               
+                if (isGameEndTime)
+                {
+                    resultGameStat.gameEndTimestamp = gameEndTime.GetRawText().ToString();
+                }
+                
             }
-            return await Task.FromResult(resultGameStat);
+            return Task.FromResult(resultGameStat);
 
         }
 
