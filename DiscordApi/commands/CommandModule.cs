@@ -65,14 +65,17 @@ namespace DiscordApi.commands
         [Command("sendPicture")]
         public async Task SendPicture(CommandContext context)
         {
-            
-            Bitmap bitmap = new Bitmap(200, 200);
-            Graphics g = Graphics.FromImage(bitmap);
-            g.Clear(Color.Aqua);
-            //new StreamReader(@"E:\pict\lel.jpg");
 
+            //Bitmap bitmap = new Bitmap(500, 300);
+            //Graphics g = Graphics.FromImage(bitmap);
+            //g.Clear(Color.White);
+            //bitmap.Save(@"E:\pict\kub.png");
+
+
+            string path = Drawing.DrawingChart.DrawAndSave(100);
             DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
-            messageBuilder.WithFile(@"E:\pict\lel.jpg", new StreamReader(@"E:\pict\lel.jpg").BaseStream);
+            //messageBuilder.WithFile(@"E:\pict\lel.jpg", new StreamReader(@"E:\pict\lel.jpg").BaseStream);
+            messageBuilder.WithFile(path, new StreamReader(path).BaseStream);
             await context.RespondAsync(messageBuilder);
         }
 

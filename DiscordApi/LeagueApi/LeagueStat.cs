@@ -15,7 +15,7 @@ namespace DiscordApi.LeagueApi
 {
     static class LeagueStat
     {
-        private const string api_key = "RGAPI-6873d748-0a5d-42eb-b200-82649f81b763";
+        private const string api_key = "RGAPI-9a43cf87-193e-467f-b9fe-e638e065c83c";
         public static async Task<StringBuilder> MainAsync(ulong authorId)
         {
             var api = MingweiSamuel.Camille.RiotApi.NewInstance($"{api_key}");
@@ -169,8 +169,8 @@ namespace DiscordApi.LeagueApi
                             }
                             if(playerGameStat != null)
                             {
-                                needFindMatches = false;
-                                break;
+                                //needFindMatches = false;
+                                continue;
                             }
 
                             var match = api.MatchV5.GetMatch(Region.Europe, matchId);
