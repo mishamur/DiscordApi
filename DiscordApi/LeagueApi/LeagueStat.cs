@@ -10,12 +10,13 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DiscordApi.LeagueApi.Models;
 using System.Threading;
+using DiscordApi.Drawing;
 
 namespace DiscordApi.LeagueApi
 {
     static class LeagueStat
     {
-        private const string api_key = "RGAPI-9a43cf87-193e-467f-b9fe-e638e065c83c";
+        private const string api_key = "RGAPI-4093ac91-7523-4650-918a-8e5224b0b254";
         public static async Task<StringBuilder> MainAsync(ulong authorId)
         {
             var api = MingweiSamuel.Camille.RiotApi.NewInstance($"{api_key}");
@@ -101,7 +102,12 @@ namespace DiscordApi.LeagueApi
 
             return await Task.FromResult<StringBuilder>(resultMes);
         }
-        public static async Task<StringBuilder> GetWintate(string summonerName)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="summonerName"></param>
+        /// <returns>path to image</returns>
+        public static async Task<string> GetWintate(string summonerName)
         {
             StringBuilder result = new StringBuilder();
             string puuid = GetPuuidByName(summonerName);
@@ -141,7 +147,7 @@ namespace DiscordApi.LeagueApi
                 catch(Exception ex)
                 {
                     Console.WriteLine(ex.Message + " " + ex.StackTrace);
-                    return result.AppendLine("ошибка");
+                    return "ошибка";
                 }
                 
 
@@ -235,35 +241,40 @@ namespace DiscordApi.LeagueApi
                         startCountMatches += 100;
                     } while (matches.Length != 0 && needFindMatches);
 
-                    double countWins = 0;
-                    double countGames = 0;
-                    using (ApplicationContext db = new ApplicationContext())
+                    //double countWins = 0;
+                    //double countGames = 0;
+                    //using (ApplicationContext db = new ApplicationContext())
+                    //{
+                    //    db.PlayerGameStats.Select(x => x).Where(x => x.UserPuuid == puuid)
+                    //        .ToList().ForEach(x =>
+                    //        {
+                    //            if (x.PlayerStat.Win)
+                    //                countWins++;
+                    //        });
+                    //    countGames = db.PlayerGameStats.Where(x => x.UserPuuid == puuid).Count();
+                    //
+                    //}
+                    //
+                    //double winrate = 0;
+                    //if(countGames > 0)
+                    //{
+                    //    winrate = (double)((int)((double)(countWins / countGames) * 100 * 100)) / 100;
+                    //}
+                    List<PlayerGameStat> collectionGamesCurPlayer = null;
+                    using(ApplicationContext db = new ApplicationContext())
                     {
-                        db.PlayerGameStats.Select(x => x).Where(x => x.UserPuuid == puuid)
-                            .ToList().ForEach(x =>
-                            {
-                                if (x.PlayerStat.Win)
-                                    countWins++;
-                            });
-                        countGames = db.PlayerGameStats.Where(x => x.UserPuuid == puuid).Count();
-
+                        collectionGamesCurPlayer = db.PlayerGameStats.Select(x => x).Where(x => x.User.Puuid == puuid).ToList();                        
                     }
-
-                    double winrate = 0;
-                    if(countGames > 0)
-                    {
-                        winrate = (double)((int)((double)(countWins / countGames) * 100 * 100)) / 100;
-                    }
-                    return await Task.FromResult( result.AppendLine("результат в консоли").AppendLine("кол-во проанализированных матчей: " + countGames)
-                        .AppendLine($"винрейт: {winrate}%"));
-
+                    if(collectionGamesCurPlayer != null)
+                        return await Task.FromResult(DrawingChart.DrawAndSave(collectionGamesCurPlayer));
+                    return await Task.FromResult("ошибка");
                 }
             }
             else
             {
-                return await Task.FromResult(result.AppendLine("такого игрока не существует"));
+                return await Task.FromResult("такого игрока не существует");
             }
-            return await Task.FromResult(result.AppendLine("что-то отвалилось"));
+            return await Task.FromResult("что-то отвалилось");
 
         }
 

@@ -11,6 +11,8 @@ using DSharpPlus.Entities;
 using DSharpPlus;
 using System.Drawing;
 using System.IO;
+using DiscordApi.LeagueApi.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace DiscordApi.commands
 {
@@ -58,25 +60,37 @@ namespace DiscordApi.commands
         [Command("getwr")]
         public async Task GetWinrate(CommandContext context, string summonerName)
         {
-            StringBuilder result = LeagueStat.GetWintate(summonerName).Result;
-            await context.RespondAsync(result.ToString());
+            string pathToImage = LeagueStat.GetWintate(summonerName).Result;
+
+            DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
+            messageBuilder.WithFile(pathToImage, new StreamReader(pathToImage).BaseStream);
+            messageBuilder.Content = $"Винрейт игрока: {summonerName}";
+            await context.RespondAsync(messageBuilder);
         }
 
         [Command("sendPicture")]
         public async Task SendPicture(CommandContext context)
         {
-
-            //Bitmap bitmap = new Bitmap(500, 300);
-            //Graphics g = Graphics.FromImage(bitmap);
-            //g.Clear(Color.White);
-            //bitmap.Save(@"E:\pict\kub.png");
-
-
-            string path = Drawing.DrawingChart.DrawAndSave(100);
-            DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
-            //messageBuilder.WithFile(@"E:\pict\lel.jpg", new StreamReader(@"E:\pict\lel.jpg").BaseStream);
-            messageBuilder.WithFile(path, new StreamReader(path).BaseStream);
-            await context.RespondAsync(messageBuilder);
+            List<PlayerGameStat> pgs = null;
+            using(ApplicationContext db = new ApplicationContext())
+            {
+                pgs = db.PlayerGameStats.Include(p => p.User).Where(p => p.User.SummName == "W3akLink").ToList();
+            }
+            if(pgs != null)
+            {
+                Console.WriteLine("ща будет картинка");
+                string path = Drawing.DrawingChart.DrawAndSave(pgs);
+                DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
+                //messageBuilder.WithFile(@"E:\pict\lel.jpg", new StreamReader(@"E:\pict\lel.jpg").BaseStream);
+                messageBuilder.WithFile(path, new StreamReader(path).BaseStream);
+                await context.RespondAsync(messageBuilder);
+            }
+            else
+            {
+                Console.WriteLine("pgs = null");
+                await context.RespondAsync("err");
+            }
+            
         }
 
         [Command("register")]
