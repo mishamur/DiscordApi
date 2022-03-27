@@ -16,30 +16,32 @@ namespace DiscordApi.LeagueApi
 {
     static class LeagueStat
     {
-        private const string api_key = "RGAPI-4093ac91-7523-4650-918a-8e5224b0b254";
+        private const string api_key = "RGAPI-1d7b6e5e-5230-4b10-a935-047f80b76d23";
         public static async Task<StringBuilder> MainAsync(ulong authorId)
         {
             var api = MingweiSamuel.Camille.RiotApi.NewInstance($"{api_key}");
             StringBuilder resultMes = new StringBuilder();
 
             //////////////////////////////////////////////////
-            User user = null;
+            List<User> users = null;
             List<User> friends = new List<User>();
             
             using (ApplicationContext db = new ApplicationContext())
             {
-                user = db.Users.Find(authorId);
+
+                //user = db.Users.Find(authorId);
+                users = db.Users.Select(u => u).Where(u => u.AuthorId == authorId).ToList();
             }
 
-            if(user != null)
+            if(users != null)
             {
                 using (ApplicationContext db = new ApplicationContext())
                 {
-                    friends.AddRange(db.Users.Select(x => x).Where(x => x.GuildId == user.GuildId));
+                    friends.AddRange(db.Users.Select(x => x).Where(x => x.GuildId == users.First().GuildId));
                 }
 
 
-                var matches = api.MatchV5.GetMatchIdsByPUUID(Region.Europe, user.Puuid);
+                var matches = api.MatchV5.GetMatchIdsByPUUID(Region.Europe, users.First().Puuid);
 
                 matches.ToList().ForEach(x => Console.WriteLine(x));
 
@@ -109,7 +111,7 @@ namespace DiscordApi.LeagueApi
         /// <returns>path to image</returns>
         public static async Task<string> GetWintate(string summonerName)
         {
-            StringBuilder result = new StringBuilder();
+            //StringBuilder result = new StringBuilder();
             string puuid = GetPuuidByName(summonerName);
             if(puuid != null)
             {
@@ -267,7 +269,7 @@ namespace DiscordApi.LeagueApi
                     }
                     if(collectionGamesCurPlayer != null)
                         return await Task.FromResult(DrawingChart.DrawAndSave(collectionGamesCurPlayer));
-                    return await Task.FromResult("ошибка");
+                    return await Task.FromResult("проблема с кол-вом игр");
                 }
             }
             else

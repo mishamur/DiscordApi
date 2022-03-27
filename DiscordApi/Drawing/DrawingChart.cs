@@ -72,12 +72,13 @@ namespace DiscordApi.Drawing
                 if (playerGames[i].PlayerStat.Win == true)
                     countWins++;
                 //дичь
-                float winrate = (float)((int)((float)((float)countWins / (float)i) * 100f * 100f)) / 100f;
+                Console.WriteLine(countWins);
+                float winrate = (float)((int)((float)((float)countWins / (float)(i + 1)) * 100f * 100f)) / 100f;
                 g.DrawLine(new Pen(Color.Goldenrod, 1f), new PointF(xs(scaleX, x), ys(scaleY, y)),
                     new PointF(xs(scaleX, i), ys(scaleY, winrate)));
                 x = i;
                 y = winrate;
-               
+                Console.WriteLine(y);
             }
             //красная строка - 50% винрейт
             g.DrawLine(new Pen(Color.Red, 0.1f), new PointF(xs(scaleX, 0), ys(scaleY, 50)), 

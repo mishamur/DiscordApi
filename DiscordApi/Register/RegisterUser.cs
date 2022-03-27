@@ -44,7 +44,6 @@ namespace DiscordApi.Register
                             Console.WriteLine("всё сохранено");
                             return true;
                         }
-
                     }
                 }
                 Console.WriteLine("ошибка добавления пользователя");
