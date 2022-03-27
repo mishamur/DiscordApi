@@ -17,7 +17,7 @@ namespace DiscordApi
         {
             DiscordClient client = new DiscordClient(new DiscordConfiguration()
             {
-                Token = "OTIyMDMwMDE0MjAxOTg3MDgz.Yb7hXQ.WhDEkLja8zLTGKYHPCISNJ4EBCk",
+                Token = "token",
                 TokenType = TokenType.Bot,
                 Intents = DiscordIntents.AllUnprivileged
             });

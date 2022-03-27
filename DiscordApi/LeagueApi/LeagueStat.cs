@@ -16,7 +16,7 @@ namespace DiscordApi.LeagueApi
 {
     static class LeagueStat
     {
-        private const string api_key = "RGAPI-1d7b6e5e-5230-4b10-a935-047f80b76d23";
+        private const string api_key = "api";
         public static async Task<StringBuilder> MainAsync(ulong authorId)
         {
             var api = MingweiSamuel.Camille.RiotApi.NewInstance($"{api_key}");
