@@ -3,6 +3,7 @@ using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using System.Threading.Tasks;
 using DiscordApi.commands;
+using DSharpPlus.VoiceNext;
 
 namespace DiscordApi
 {
@@ -17,10 +18,11 @@ namespace DiscordApi
         {
             DiscordClient client = new DiscordClient(new DiscordConfiguration()
             {
-                Token = "token",
+                Token = "your_token",
                 TokenType = TokenType.Bot,
                 Intents = DiscordIntents.AllUnprivileged
             });
+            client.UseVoiceNext();
 
             var commands = client.UseCommandsNext(new CommandsNextConfiguration()
             {

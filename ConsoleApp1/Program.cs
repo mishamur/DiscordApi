@@ -2,8 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-
-
+using MP3Sharp;
+using System.IO;
+using System.Text.RegularExpressions;
 
 namespace ConsoleApp1
 {
@@ -11,30 +12,20 @@ namespace ConsoleApp1
     {
         static void Main(string[] args)
         {
-            double a = (double)((int)((double)256 / 501 * 100 * 100 ))/ 100;
-            Console.WriteLine(a);
-           
+            string pattern = @"-\w+";
+            string content = "gdsffsd -asd -ss";
+            Regex regex = new Regex(pattern);
+            
 
-            using(ApplicationContext db = new ApplicationContext())
+            foreach(Match m in regex.Matches(content))
             {
-                
-                PlayerGameStat playerStat12 = db.PlayerGameStats.FirstOrDefault(x => (x.MatchId == "RU_370052055" &&
-                x.UserPuuid == "AVaUX1Fvu4NHC8Vm5-V8OdnbsS_4nLes-C1OqBrWVr611YSmd72ph_1_XrZCH2jiQ-fXRpshrgJgew"));
-
-                if (playerStat12 == null) 
-                {
-                    Console.WriteLine("игра не найдена");
-                }
-                else
-                {
-                    Console.WriteLine("игра найдена");
-                    Console.WriteLine(playerStat12.ToString());
-                }
+                Console.WriteLine(m.Value);
             }
 
-            Console.WriteLine("complete");
 
-
+            
         }
+
+
     }
 }

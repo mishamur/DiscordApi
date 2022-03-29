@@ -90,9 +90,10 @@ namespace DiscordApi.Drawing
                    Brushes.Crimson,
                    new PointF(xs(scaleX, 0), 0));
 
-            bitmap.Save(@"E:\pict\kub.png");
+            Directory.CreateDirectory(@"D:\pict");
+            bitmap.Save(@"D:\pict\kub.png");
 
-            return @"E:\pict\kub.png";
+            return @"D:\pict\kub.png";
         }
 
         public static float xs(float scale, float x)

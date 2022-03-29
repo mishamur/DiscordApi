@@ -13,11 +13,15 @@ using System.Drawing;
 using System.IO;
 using DiscordApi.LeagueApi.Models;
 using Microsoft.EntityFrameworkCore;
+using DSharpPlus.VoiceNext;
+using System.Diagnostics;
+using MP3Sharp;
+using System.Text.RegularExpressions;
 
 namespace DiscordApi.commands
 {
-    
-    public class CommandModule : BaseCommandModule 
+
+    public class CommandModule : BaseCommandModule
     {
         [Command("hello")]
         public async Task HelloCommand(CommandContext context)
@@ -28,7 +32,7 @@ namespace DiscordApi.commands
             "Привет",
             "Салам",
         });
-            
+
             Random random = new Random();
             await context.RespondAsync($"{helloRespose.ElementAt(random.Next(0, helloRespose.Count - 1))}," +
                 $" {context.Message.Author.Username}");
@@ -43,7 +47,7 @@ namespace DiscordApi.commands
                 Console.WriteLine(asnwer);
                 await context.RespondAsync(asnwer.ToString());
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
             }
@@ -55,7 +59,7 @@ namespace DiscordApi.commands
         {
             await context.RespondAsync($"content: {content}, AuthorId: {context.Message.Author.Id}," +
                  $" GuildId: {context.Guild.Id}");
-        } 
+        }
 
         [Command("getwr")]
         public async Task GetWinrate(CommandContext context, string summonerName)
@@ -72,11 +76,11 @@ namespace DiscordApi.commands
         public async Task SendPicture(CommandContext context)
         {
             List<PlayerGameStat> pgs = null;
-            using(ApplicationContext db = new ApplicationContext())
+            using (ApplicationContext db = new ApplicationContext())
             {
                 pgs = db.PlayerGameStats.Include(p => p.User).Where(p => p.User.SummName == "W3akLink").ToList();
             }
-            if(pgs != null)
+            if (pgs != null)
             {
                 Console.WriteLine("ща будет картинка");
                 string path = Drawing.DrawingChart.DrawAndSave(pgs);
@@ -90,15 +94,15 @@ namespace DiscordApi.commands
                 Console.WriteLine("pgs = null");
                 await context.RespondAsync("err");
             }
-            
+
         }
 
         [Command("register")]
         public async Task Register(CommandContext context, string content)
         {
-            if(content != "" && content != null)
+            if (content != "" && content != null)
             {
-               
+
                 bool result = RegisterUser.RegisterUsers(content, context.Message.Author.Id, context.Guild.Id);
                 Console.WriteLine(result);
                 if (result)
@@ -106,10 +110,70 @@ namespace DiscordApi.commands
                     await context.RespondAsync("successfull");
                     return;
                 }
-                
+
             }
             await context.RespondAsync("Некорректный ввод");
-   
+
         }
+
+        [Command("join")]
+        public async Task JoinVoice(CommandContext context, DiscordChannel channel = null)
+        {
+            channel ??= context.Member.VoiceState?.Channel;
+            await channel.ConnectAsync();
+        }
+
+        [Command("play")]
+        public async Task PlayVoice(CommandContext context, string content)
+        {
+            int countRepeat;
+            bool isRepeat = int.TryParse(content, out countRepeat);
+            
+            for(int i = 0; i < (isRepeat?countRepeat:1); i++)
+            {
+                await PlayWebm(context);
+            }
+        }
+
+        [Command("leave")]
+        public async Task LeaveVoice(CommandContext context)
+        {
+            var vnext = context.Client.GetVoiceNext();
+            var connect = vnext.GetConnection(context.Guild);
+
+            connect.Disconnect();
+            await Task.CompletedTask;
+        }
+
+        private async Task PlayWebm(CommandContext context)
+        {
+            DirectoryInfo directory = new DirectoryInfo(@"C:\Users\misha\Videos\туч\музыка");
+            int rnd = new Random().Next(0, directory.EnumerateFiles().Count() - 1);
+            string path = directory.GetFiles().ElementAt(rnd).FullName;
+
+            var vnext = context.Client.GetVoiceNext();
+            var connection = vnext.GetConnection(context.Guild);
+            var transmit = connection.GetTransmitSink();
+
+            var pcm = ConvertAudioToPcm(path);
+            await pcm.CopyToAsync(transmit);
+            await pcm.DisposeAsync();
+        }
+
+        private Stream ConvertAudioToPcm(string filePath)
+        {
+            string arguments = $@"-i ""{filePath}"" -ac 2 -f s16le -ar 48000 pipe:1";
+            var ffmpeg = Process.Start(new ProcessStartInfo
+            {
+                FileName = @"D:\ffmpeg\ffmpeg-2022-03-24-git-28d011516b-essentials_build\bin\ffmpeg.exe",
+                Arguments = arguments,
+                RedirectStandardOutput = true,
+                UseShellExecute = false
+            });
+
+            return ffmpeg.StandardOutput.BaseStream;
+        }
+
+       
     }
 }
