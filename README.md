@@ -7,4 +7,5 @@
 5)В \LeagueApi\LeagueStat.cs впишите свой league api_key
 6)В Drawing\DrawingChart.cs укажите директорию в которую будете сохранять картинку
 7)В /DiscordApi/ApplicationContext.cs указать логин, пароль, название бд(выбирайте как вам угодно, создаст новую)
+8) В visual studio 2022 открыть "Консоль диспетчера пакетов" и вписать команду Update-Database
 Готово, запускайте, пользуйтесь
