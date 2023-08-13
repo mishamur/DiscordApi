@@ -18,7 +18,7 @@ namespace DiscordApi
         {
             DiscordClient client = new DiscordClient(new DiscordConfiguration()
             {
-                Token = "your_token",
+                Token = "OTIyMDMwMDE0MjAxOTg3MDgz.GP660R.NYhXaDtlrBZWHj6o3Vjdgq16ICJWFQTUXNSMJE",
                 TokenType = TokenType.Bot,
                 Intents = DiscordIntents.AllUnprivileged
             });
@@ -26,7 +26,7 @@ namespace DiscordApi
 
             var commands = client.UseCommandsNext(new CommandsNextConfiguration()
             {
-                StringPrefixes = new[] { "//" }
+                StringPrefixes = new[] { "!" }
             });
 
             commands.RegisterCommands<CommandModule>();

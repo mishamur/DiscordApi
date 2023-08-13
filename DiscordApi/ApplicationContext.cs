@@ -12,11 +12,7 @@ namespace DiscordApi
     {
         public DbSet<User> Users => Set<User>();
         public DbSet<PlayerGameStat> PlayerGameStats =>  Set<PlayerGameStat>();
-        public ApplicationContext()
-        {
-           // Database.EnsureCreated();
-        }
-
+        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<PlayerGameStat>().HasKey(pgs => new {pgs.MatchId, pgs.UserPuuid});
@@ -25,6 +21,5 @@ namespace DiscordApi
         {
             optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=consoleuserdb;Username=postgres;Password={p@ssw0rd}");
         }
-       
     }
 }

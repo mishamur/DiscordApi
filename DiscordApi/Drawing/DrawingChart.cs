@@ -58,9 +58,6 @@ namespace DiscordApi.Drawing
             g.DrawString($"{playerGames.Count}", new Font(new FontFamily(GenericFontFamilies.SansSerif), 5f),
                    Brushes.Black, new PointF(xs(scaleX, playerGames.Count), ys(scaleY, 0)));
             
-
-
-
             int countWins = 0;
             if (playerGames[0].PlayerStat.Win == true)
                 countWins++;

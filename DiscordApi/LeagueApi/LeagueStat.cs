@@ -16,7 +16,7 @@ namespace DiscordApi.LeagueApi
 {
     static class LeagueStat
     {
-        private const string api_key = "your_api_key";
+        private const string api_key = "RGAPI-1d7b6e5e-5230-4b10-a935-047f80b76d23";
         public static async Task<StringBuilder> MainAsync(ulong authorId)
         {
             var api = MingweiSamuel.Camille.RiotApi.NewInstance($"{api_key}");
@@ -29,7 +29,6 @@ namespace DiscordApi.LeagueApi
             using (ApplicationContext db = new ApplicationContext())
             {
 
-                //user = db.Users.Find(authorId);
                 users = db.Users.Select(u => u).Where(u => u.AuthorId == authorId).ToList();
             }
 
@@ -243,25 +242,6 @@ namespace DiscordApi.LeagueApi
                         startCountMatches += 100;
                     } while (matches.Length != 0 && needFindMatches);
 
-                    //double countWins = 0;
-                    //double countGames = 0;
-                    //using (ApplicationContext db = new ApplicationContext())
-                    //{
-                    //    db.PlayerGameStats.Select(x => x).Where(x => x.UserPuuid == puuid)
-                    //        .ToList().ForEach(x =>
-                    //        {
-                    //            if (x.PlayerStat.Win)
-                    //                countWins++;
-                    //        });
-                    //    countGames = db.PlayerGameStats.Where(x => x.UserPuuid == puuid).Count();
-                    //
-                    //}
-                    //
-                    //double winrate = 0;
-                    //if(countGames > 0)
-                    //{
-                    //    winrate = (double)((int)((double)(countWins / countGames) * 100 * 100)) / 100;
-                    //}
                     List<PlayerGameStat> collectionGamesCurPlayer = null;
                     using(ApplicationContext db = new ApplicationContext())
                     {
@@ -443,10 +423,6 @@ namespace DiscordApi.LeagueApi
                     result = playerStats.First().GetStat();
                 }
             }
-
-
-
-
             return result;
         }
 

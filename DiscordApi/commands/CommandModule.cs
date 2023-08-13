@@ -8,24 +8,25 @@ using DSharpPlus.CommandsNext.Attributes;
 using DiscordApi.LeagueApi;
 using DiscordApi.Register;
 using DSharpPlus.Entities;
-using DSharpPlus;
-using System.Drawing;
 using System.IO;
 using DiscordApi.LeagueApi.Models;
 using Microsoft.EntityFrameworkCore;
 using DSharpPlus.VoiceNext;
 using System.Diagnostics;
-using MP3Sharp;
-using System.Text.RegularExpressions;
+using DiscordApi.MusicHandler;
 
 namespace DiscordApi.commands
 {
 
     public class CommandModule : BaseCommandModule
     {
+
+        private PlayMusic playMusic = null;
+
         [Command("hello")]
         public async Task HelloCommand(CommandContext context)
         {
+            Console.WriteLine("hello");
             List<string> helloRespose = new List<string>(new string[] {
             "Салют",
             "Оу, давно не виделись",
@@ -147,7 +148,7 @@ namespace DiscordApi.commands
 
         private async Task PlayWebm(CommandContext context)
         {
-            DirectoryInfo directory = new DirectoryInfo(@"C:\Users\misha\Videos\туч\музыка");
+            DirectoryInfo directory = new DirectoryInfo(@"C:\Users\User\Videos\туч\музыка");
             int rnd = new Random().Next(0, directory.EnumerateFiles().Count() - 1);
             string path = directory.GetFiles().ElementAt(rnd).FullName;
 
@@ -165,7 +166,7 @@ namespace DiscordApi.commands
             string arguments = $@"-i ""{filePath}"" -ac 2 -f s16le -ar 48000 pipe:1";
             var ffmpeg = Process.Start(new ProcessStartInfo
             {
-                FileName = @"D:\ffmpeg\ffmpeg-2022-03-24-git-28d011516b-essentials_build\bin\ffmpeg.exe",
+                FileName = @"C:\Users\User\Documents\ffmpeg-master-latest-win64-gpl-shared\bin\ffmpeg.exe",
                 Arguments = arguments,
                 RedirectStandardOutput = true,
                 UseShellExecute = false
@@ -173,7 +174,5 @@ namespace DiscordApi.commands
 
             return ffmpeg.StandardOutput.BaseStream;
         }
-
-       
     }
 }
