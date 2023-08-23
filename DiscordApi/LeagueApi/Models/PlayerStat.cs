@@ -1,56 +1,61 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
+using DiscordApi.LeagueApi.Attributes;
 using Microsoft.EntityFrameworkCore;
 
 namespace LeagueApi.Models
 {
     [Owned]
     public class PlayerStat
-    { 
+    {
+        [PlayerStatDescription("Имя призывателя")]
         public string SummonerName { get; set; }
+        [PlayerStatDescription("Убийства")]
         public int? Kills { get; set; }
+        [PlayerStatDescription("Смерти")]
         public int? Deaths { get; set; }
+        [PlayerStatDescription("Помощь")]
         public int? Assists { get; set; }
+        [PlayerStatDescription("Имя чемпиона")]
         public string ChampionName { get; set; }
         public int? ParticipantId { get; set; }
+        [PlayerStatDescription("Кол-во квадрокиллов")]
         public int? QuadraKills { get; set; }
+        [PlayerStatDescription("Пента")]
         public int? PentaKills { get; set; }
+        [PlayerStatDescription("Урон по вражинам")]
         public int? TotalDamageDealtToChampions { get; set; }
+        [PlayerStatDescription("Скастил Q-ку")]
         public int? Spell1Casts { get; set; }
+        [PlayerStatDescription("Скастил R-ку")]
         public int? Spell4Casts { get; set; }
+        [PlayerStatDescription("Показатель обзора")]
         public int? VisionScore { get; set; }
+        [PlayerStatDescription("Победа?")]
         public bool Win { get; set;  }
+        [PlayerStatDescription("Фармила крипов")]
         public int? TotalMinionsKilled { get; set;  }
+        [PlayerStatDescription("Забрано крипов у лесника")]
         public int? NeutralMinionsKilled { get; set; }
+        [PlayerStatDescription("Отдыхал на базе")]
         public int? TotalTimeSpentDead { get; set;  }
+        [PlayerStatDescription("Зачем ты ставил столько вардов?")]
         public int? WardsPlaced { get; set; }
+        [PlayerStatDescription("Кэш")]
         public int? GoldEarned { get; set; }
+        [PlayerStatDescription("Кайтил времени")]
         public int? TimeCCingOthers { get; set; }
 
         public StringBuilder GetStat()
         {
             StringBuilder stat = new StringBuilder();
-            stat.AppendLine("Имя призывателя: " + SummonerName);
-            stat.AppendLine("Отыграл на: " + ChampionName);
-            stat.AppendLine($"КDA: {Kills} / {Deaths} / {Assists}");
-            stat.AppendLine("Заработал голдишки: " + GoldEarned);
-            stat.AppendLine("Нанёс урона вражинам: " + TotalDamageDealtToChampions);
-            stat.AppendLine("Показатель контроля: " + TimeCCingOthers);
-            stat.AppendLine("Скастил q-ку: " + Spell1Casts);
-            stat.AppendLine("Скастил r-ку: " + Spell4Casts);
-            stat.AppendLine("Показатель обзора " + VisionScore);
-            stat.AppendLine("Поставил вардиков: " + WardsPlaced);
-            stat.AppendLine("Нафармил крипчиков: " + (TotalMinionsKilled + NeutralMinionsKilled));
-            stat.AppendLine("Чилил в таверне секунд: " + TotalTimeSpentDead);
-            if (Win)
-                stat.AppendLine("Изи победная");
-            else
-                stat.AppendLine("Опять проиграли");
-            if (PentaKills > 0)
-                stat.AppendLine("Поздравляем с первым и последним пентакиллом в твоей жизни");
+            
+            foreach(var prop in this.GetType().GetProperties())
+            {
+                var descAttribute = prop.GetCustomAttribute<PlayerStatDescriptionAttribute>();
+                if (descAttribute != null)
+                    stat.AppendLine($"{descAttribute.Description} : {prop.GetValue(this)}");
+            }
             
             return stat;
         }

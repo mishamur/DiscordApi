@@ -4,6 +4,8 @@ using DSharpPlus.CommandsNext;
 using System.Threading.Tasks;
 using DiscordApi.commands;
 using DSharpPlus.VoiceNext;
+using Microsoft.Extensions.DependencyInjection;
+using DiscordApi.LeagueApi.Services;
 
 namespace DiscordApi
 {
@@ -18,20 +20,24 @@ namespace DiscordApi
         {
             DiscordClient client = new DiscordClient(new DiscordConfiguration()
             {
-                Token = "OTIyMDMwMDE0MjAxOTg3MDgz.GP660R.NYhXaDtlrBZWHj6o3Vjdgq16ICJWFQTUXNSMJE",
+                Token = "yourToken",
                 TokenType = TokenType.Bot,
-                Intents = DiscordIntents.AllUnprivileged
+                Intents = DiscordIntents.AllUnprivileged | DiscordIntents.MessageContents
             });
+            
             client.UseVoiceNext();
+
+            var service = new ServiceCollection()
+                .AddSingleton<PlayMusicService>()
+                .AddSingleton<LeagueStatService>()
+                .BuildServiceProvider();
 
             var commands = client.UseCommandsNext(new CommandsNextConfiguration()
             {
                 StringPrefixes = new[] { "!" }
             });
-
             commands.RegisterCommands<CommandModule>();
-            
-                
+
             await client.ConnectAsync();
             await Task.Delay(-1);
 

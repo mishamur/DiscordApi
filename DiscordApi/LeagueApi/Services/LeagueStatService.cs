@@ -7,32 +7,29 @@ using LeagueApi.Models;
 using MingweiSamuel.Camille.Enums;
 using MingweiSamuel.Camille;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using DiscordApi.LeagueApi.Models;
-using System.Threading;
 using DiscordApi.Drawing;
 
-namespace DiscordApi.LeagueApi
+namespace DiscordApi.LeagueApi.Services
 {
-    static class LeagueStat
+    public class LeagueStatService
     {
         private const string api_key = "RGAPI-1d7b6e5e-5230-4b10-a935-047f80b76d23";
-        public static async Task<StringBuilder> MainAsync(ulong authorId)
+        private readonly RiotApi _api = RiotApi.NewInstance(api_key);
+        public async Task<StringBuilder> MainAsync(ulong authorId)
         {
-            var api = MingweiSamuel.Camille.RiotApi.NewInstance($"{api_key}");
             StringBuilder resultMes = new StringBuilder();
 
             //////////////////////////////////////////////////
             List<User> users = null;
             List<User> friends = new List<User>();
-            
+
             using (ApplicationContext db = new ApplicationContext())
             {
-
                 users = db.Users.Select(u => u).Where(u => u.AuthorId == authorId).ToList();
             }
 
-            if(users != null)
+            if (users != null)
             {
                 using (ApplicationContext db = new ApplicationContext())
                 {
@@ -40,12 +37,12 @@ namespace DiscordApi.LeagueApi
                 }
 
 
-                var matches = api.MatchV5.GetMatchIdsByPUUID(Region.Europe, users.First().Puuid);
+                var matches = _api.MatchV5.GetMatchIdsByPUUID(Region.Europe, users.First().Puuid);
 
                 matches.ToList().ForEach(x => Console.WriteLine(x));
 
                 //
-                var match = api.MatchV5.GetMatch(Region.Europe, matches.First());
+                var match = _api.MatchV5.GetMatch(Region.Europe, matches.First());
                 //
                 //
                 Dictionary<string, object>.ValueCollection valueCollection = match._AdditionalProperties.Values;
@@ -95,33 +92,30 @@ namespace DiscordApi.LeagueApi
 
                 //информация о игре
                 StringBuilder gameStat = new StringBuilder((await GetGameStat(json)).ToString());
-                if(gameStat != null)
+                if (gameStat != null)
                     resultMes.AppendLine(gameStat.ToString());
-                
-
             }
-
-            return await Task.FromResult<StringBuilder>(resultMes);
+            return await Task.FromResult(resultMes);
         }
         /// <summary>
-        /// 
+        /// Получить винрейт по имени призывателя
         /// </summary>
         /// <param name="summonerName"></param>
         /// <returns>path to image</returns>
-        public static async Task<string> GetWintate(string summonerName)
+        public async Task<string> GetWintate(string summonerName)
         {
             //StringBuilder result = new StringBuilder();
             string puuid = GetPuuidByName(summonerName);
-            if(puuid != null)
+            if (puuid != null)
             {
                 try
                 {
                     using (ApplicationContext db = new ApplicationContext())
                     {
                         User findUser = null;
-                        foreach(var user in db.Users)
+                        foreach (var user in db.Users)
                         {
-                            if(user.Puuid == puuid)
+                            if (user.Puuid == puuid)
                             {
                                 findUser = user;
                                 break;
@@ -145,25 +139,23 @@ namespace DiscordApi.LeagueApi
                         Console.WriteLine("save db");
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message + " " + ex.StackTrace);
                     return "ошибка";
                 }
-                
 
 
-                var api = MingweiSamuel.Camille.RiotApi.NewInstance($"{api_key}");
-                if(api != null)
+                if (_api != null)
                 {
                     string[] matches = null;
                     int startCountMatches = 0;
-                    
+
                     bool needFindMatches = true;
                     do
                     {
-                       
-                        matches = api.MatchV5.GetMatchIdsByPUUID(Region.Europe, puuid, startCountMatches, 100);
+
+                        matches = _api.MatchV5.GetMatchIdsByPUUID(Region.Europe, puuid, startCountMatches, 100);
                         Console.WriteLine(matches);
                         foreach (string matchId in matches)
                         {
@@ -171,69 +163,69 @@ namespace DiscordApi.LeagueApi
                             PlayerGameStat playerGameStat = null;
                             using (ApplicationContext db = new ApplicationContext())
                             {
-                                playerGameStat = db.PlayerGameStats.FirstOrDefault(x => (x.MatchId == matchId &&
-                                x.UserPuuid == puuid));
+                                playerGameStat = db.PlayerGameStats.FirstOrDefault(x => x.MatchId == matchId &&
+                                x.UserPuuid == puuid);
                             }
-                            if(playerGameStat != null)
+                            if (playerGameStat != null)
                             {
                                 //needFindMatches = false;
                                 continue;
                             }
 
-                            var match = api.MatchV5.GetMatch(Region.Europe, matchId);
+                            var match = _api.MatchV5.GetMatch(Region.Europe, matchId);
                             if (match == null)
                                 continue;
 
                             Dictionary<string, object>.ValueCollection valueCollection = match._AdditionalProperties.Values;
-                            
+
                             string gameInfo = valueCollection.ToList().Last().ToString();
                             JsonDocument json = JsonSerializer.Deserialize<JsonDocument>(gameInfo);
-                            Console.WriteLine( GetGameStat(json).Result.ToString());
+                            Console.WriteLine(GetGameStat(json).Result.ToString());
                             GameStat gameStat = GetGameStat(json).Result;
 
                             JsonElement jsonParticipants;
                             //берём участников игры
                             bool isParticipants = json.RootElement.TryGetProperty("participants", out jsonParticipants);
                             if (isParticipants)
-                            {                              
+                            {
                                 //преобразуем json в массив данных о игроках
                                 JsonElement.ArrayEnumerator particArray = jsonParticipants.EnumerateArray();
-                              
+
                                 foreach (var player in particArray)
                                 {
                                     JsonElement jsonSummName;
-                       
+
                                     if (player.TryGetProperty("summonerName", out jsonSummName))
                                     {
                                         string summonerNames = jsonSummName.GetRawText().ToString();
-                                            //если нашли в массиве нашего игрока, считаем и победы и
-                                            //записываем статистику в базу данных
-                                            if (('"' + summonerName + '"').Equals(summonerNames))
+                                        //если нашли в массиве нашего игрока, считаем и победы и
+                                        //записываем статистику в базу данных
+                                        if (('"' + summonerName + '"').Equals(summonerNames))
+                                        {
+                                            PlayerStat playerStat = GetPlayerStat(summonerName, player);
+                                            try
                                             {
-                                                PlayerStat playerStat = GetPlayerStat(summonerName, player);
-                                                try
+                                                using (ApplicationContext db = new ApplicationContext())
                                                 {
-                                                    using (ApplicationContext db = new ApplicationContext())
+                                                    PlayerGameStat pgs = new PlayerGameStat()
                                                     {
-                                                        PlayerGameStat pgs = new PlayerGameStat()
-                                                        {
-                                                            MatchId = matchId,
-                                                            GameStat = gameStat,
-                                                            PlayerStat = playerStat,
-                                                            UserPuuid = puuid
-                                                        };
-                                                        db.PlayerGameStats.Add(pgs);
-                                                        db.SaveChanges();
-                                                    }
+                                                        MatchId = matchId,
+                                                        GameStat = gameStat,
+                                                        PlayerStat = playerStat,
+                                                        UserPuuid = puuid
+                                                    };
+                                                    db.PlayerGameStats.Add(pgs);
+                                                    db.SaveChanges();
                                                 }
-                                                catch(Exception ex)
-                                                {
-                                                    Console.WriteLine(ex.Message);
-                                                    Console.WriteLine(ex.StackTrace);
-                                                }
-                                                
-                                                break;
-                                            }                                        
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                Console.WriteLine(ex.Message);
+                                                Console.WriteLine(ex.StackTrace);
+                                            }
+
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -243,11 +235,11 @@ namespace DiscordApi.LeagueApi
                     } while (matches.Length != 0 && needFindMatches);
 
                     List<PlayerGameStat> collectionGamesCurPlayer = null;
-                    using(ApplicationContext db = new ApplicationContext())
+                    using (ApplicationContext db = new ApplicationContext())
                     {
-                        collectionGamesCurPlayer = db.PlayerGameStats.Select(x => x).Where(x => x.User.Puuid == puuid).ToList();                        
+                        collectionGamesCurPlayer = db.PlayerGameStats.Select(x => x).Where(x => x.User.Puuid == puuid).ToList();
                     }
-                    if(collectionGamesCurPlayer != null)
+                    if (collectionGamesCurPlayer != null)
                         return await Task.FromResult(DrawingChart.DrawAndSave(collectionGamesCurPlayer));
                     return await Task.FromResult("проблема с кол-вом игр");
                 }
@@ -264,20 +256,20 @@ namespace DiscordApi.LeagueApi
         {
             GameStat resultGameStat = new GameStat();
             JsonElement gameStartTime;
-            bool isGameStartTime = gameStat.RootElement.TryGetProperty("gameStartTimestamp",out gameStartTime);
+            bool isGameStartTime = gameStat.RootElement.TryGetProperty("gameStartTimestamp", out gameStartTime);
 
             JsonElement gameEndTime;
             bool isGameEndTime = gameStat.RootElement.TryGetProperty("gameEndTimestamp", out gameEndTime);
 
-            if( isGameStartTime)
+            if (isGameStartTime)
             {
                 resultGameStat.gameStartTimestamp = gameStartTime.GetRawText().ToString();
-               
+
                 if (isGameEndTime)
                 {
                     resultGameStat.gameEndTimestamp = gameEndTime.GetRawText().ToString();
                 }
-                
+
             }
             return Task.FromResult(resultGameStat);
 
@@ -344,13 +336,13 @@ namespace DiscordApi.LeagueApi
             }
 
             JsonElement spell4Casts;
-            if(player.TryGetProperty("spell4Casts", out spell4Casts))
+            if (player.TryGetProperty("spell4Casts", out spell4Casts))
             {
                 playerStat.Spell4Casts = Convert.ToInt32(spell4Casts.GetRawText());
             }
 
             JsonElement timeCCingOthers;
-            if(player.TryGetProperty("timeCCingOthers", out timeCCingOthers))
+            if (player.TryGetProperty("timeCCingOthers", out timeCCingOthers))
             {
                 playerStat.TimeCCingOthers = Convert.ToInt32(timeCCingOthers.GetRawText());
             }
@@ -374,7 +366,7 @@ namespace DiscordApi.LeagueApi
             }
 
             JsonElement neutralMinionsKilled;
-            if(player.TryGetProperty("neutralMinionsKilled", out neutralMinionsKilled))
+            if (player.TryGetProperty("neutralMinionsKilled", out neutralMinionsKilled))
             {
                 playerStat.NeutralMinionsKilled = Convert.ToInt32(neutralMinionsKilled.GetRawText());
             }
@@ -398,7 +390,6 @@ namespace DiscordApi.LeagueApi
             }
 
             return playerStat;
-
         }
 
         private static StringBuilder ResultMessage(List<PlayerStat> playerStats)
@@ -428,7 +419,7 @@ namespace DiscordApi.LeagueApi
 
         public static string GetPuuidByName(string name)
         {
-            var api = MingweiSamuel.Camille.RiotApi.NewInstance($"{api_key}");
+            var api = RiotApi.NewInstance($"{api_key}");
 
             string result;
             try

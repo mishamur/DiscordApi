@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using DiscordApi.LeagueApi;
 using DiscordApi.LeagueApi.Models;
+using DiscordApi.LeagueApi.Services;
 
 namespace DiscordApi.Register
 {
@@ -17,7 +18,7 @@ namespace DiscordApi.Register
             {
                 //db.Database.EnsureDeleted();
                 //db.Database.EnsureCreated();
-                string puuid = LeagueStat.GetPuuidByName(summonerName);
+                string puuid = LeagueStatService.GetPuuidByName(summonerName);
                 if (puuid != null)
                 {
                     
@@ -50,7 +51,5 @@ namespace DiscordApi.Register
                 return false;
             }
         }
-
-
     }
 }

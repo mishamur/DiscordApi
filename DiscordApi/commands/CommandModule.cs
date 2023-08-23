@@ -5,23 +5,20 @@ using System.Text;
 using System.Threading.Tasks;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
-using DiscordApi.LeagueApi;
 using DiscordApi.Register;
 using DSharpPlus.Entities;
 using System.IO;
 using DiscordApi.LeagueApi.Models;
 using Microsoft.EntityFrameworkCore;
 using DSharpPlus.VoiceNext;
-using System.Diagnostics;
-using DiscordApi.MusicHandler;
+using DiscordApi.LeagueApi.Services;
 
 namespace DiscordApi.commands
 {
-
     public class CommandModule : BaseCommandModule
     {
-
-        private PlayMusic playMusic = null;
+        public LeagueStatService LeagueStat { get; private set; } = new LeagueStatService();
+        public PlayMusicService PlayMusicService { get; private set; } = null!;
 
         [Command("hello")]
         public async Task HelloCommand(CommandContext context)
@@ -44,9 +41,9 @@ namespace DiscordApi.commands
         {
             try
             {
-                StringBuilder asnwer = await LeagueStat.MainAsync(context.Message.Author.Id);
-                Console.WriteLine(asnwer);
-                await context.RespondAsync(asnwer.ToString());
+                StringBuilder respond = await LeagueStat.MainAsync(context.Message.Author.Id);
+                Console.WriteLine(respond);
+                await context.RespondAsync(respond.ToString());
             }
             catch (Exception ex)
             {
@@ -68,7 +65,7 @@ namespace DiscordApi.commands
             string pathToImage = LeagueStat.GetWintate(summonerName).Result;
 
             DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
-            messageBuilder.WithFile(pathToImage, new StreamReader(pathToImage).BaseStream);
+            messageBuilder.AddFile(pathToImage, new StreamReader(pathToImage).BaseStream);
             messageBuilder.Content = $"Винрейт игрока: {summonerName}";
             await context.RespondAsync(messageBuilder);
         }
@@ -87,7 +84,7 @@ namespace DiscordApi.commands
                 string path = Drawing.DrawingChart.DrawAndSave(pgs);
                 DiscordMessageBuilder messageBuilder = new DiscordMessageBuilder();
                 //messageBuilder.WithFile(@"E:\pict\lel.jpg", new StreamReader(@"E:\pict\lel.jpg").BaseStream);
-                messageBuilder.WithFile(path, new StreamReader(path).BaseStream);
+                messageBuilder.AddFile(path, new StreamReader(path).BaseStream);
                 await context.RespondAsync(messageBuilder);
             }
             else
@@ -103,7 +100,6 @@ namespace DiscordApi.commands
         {
             if (content != "" && content != null)
             {
-
                 bool result = RegisterUser.RegisterUsers(content, context.Message.Author.Id, context.Guild.Id);
                 Console.WriteLine(result);
                 if (result)
@@ -111,29 +107,24 @@ namespace DiscordApi.commands
                     await context.RespondAsync("successfull");
                     return;
                 }
-
             }
             await context.RespondAsync("Некорректный ввод");
-
         }
 
         [Command("join")]
         public async Task JoinVoice(CommandContext context, DiscordChannel channel = null)
         {
             channel ??= context.Member.VoiceState?.Channel;
-            await channel.ConnectAsync();
+            this.PlayMusicService._connection = channel.ConnectAsync().Result;
         }
 
         [Command("play")]
-        public async Task PlayVoice(CommandContext context, string content)
+        public async Task PlayVoice(CommandContext context, string content = "1")
         {
+            InitMusicService(context);
             int countRepeat;
             bool isRepeat = int.TryParse(content, out countRepeat);
-            
-            for(int i = 0; i < (isRepeat?countRepeat:1); i++)
-            {
-                await PlayWebm(context);
-            }
+            await this.PlayMusicService.Play(isRepeat ? countRepeat : 1);
         }
 
         [Command("leave")]
@@ -141,38 +132,13 @@ namespace DiscordApi.commands
         {
             var vnext = context.Client.GetVoiceNext();
             var connect = vnext.GetConnection(context.Guild);
-
-            connect.Disconnect();
+            connect?.Disconnect();
+            //this.PlayMusicService.Disconnect();
             await Task.CompletedTask;
         }
-
-        private async Task PlayWebm(CommandContext context)
+        public void InitMusicService(CommandContext context)
         {
-            DirectoryInfo directory = new DirectoryInfo(@"C:\Users\User\Videos\туч\музыка");
-            int rnd = new Random().Next(0, directory.EnumerateFiles().Count() - 1);
-            string path = directory.GetFiles().ElementAt(rnd).FullName;
-
-            var vnext = context.Client.GetVoiceNext();
-            var connection = vnext.GetConnection(context.Guild);
-            var transmit = connection.GetTransmitSink();
-
-            var pcm = ConvertAudioToPcm(path);
-            await pcm.CopyToAsync(transmit);
-            await pcm.DisposeAsync();
-        }
-
-        private Stream ConvertAudioToPcm(string filePath)
-        {
-            string arguments = $@"-i ""{filePath}"" -ac 2 -f s16le -ar 48000 pipe:1";
-            var ffmpeg = Process.Start(new ProcessStartInfo
-            {
-                FileName = @"C:\Users\User\Documents\ffmpeg-master-latest-win64-gpl-shared\bin\ffmpeg.exe",
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-                UseShellExecute = false
-            });
-
-            return ffmpeg.StandardOutput.BaseStream;
+            this.PlayMusicService = this.PlayMusicService == null ? new PlayMusicService(context) : this.PlayMusicService;
         }
     }
 }
