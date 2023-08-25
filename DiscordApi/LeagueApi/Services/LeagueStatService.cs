@@ -12,10 +12,11 @@ using DiscordApi.Drawing;
 
 namespace DiscordApi.LeagueApi.Services
 {
-    public class LeagueStatService
+    public class LeagueStatService : IDisposable
     {
-        private const string api_key = "RGAPI-1d7b6e5e-5230-4b10-a935-047f80b76d23";
+        private const string api_key = "your_api_key";
         private readonly RiotApi _api = RiotApi.NewInstance(api_key);
+        private readonly ApplicationContext db = new ApplicationContext();
         public async Task<StringBuilder> MainAsync(ulong authorId)
         {
             StringBuilder resultMes = new StringBuilder();
@@ -24,18 +25,12 @@ namespace DiscordApi.LeagueApi.Services
             List<User> users = null;
             List<User> friends = new List<User>();
 
-            using (ApplicationContext db = new ApplicationContext())
-            {
-                users = db.Users.Select(u => u).Where(u => u.AuthorId == authorId).ToList();
-            }
-
+            users = db.Users.Select(u => u).Where(u => u.AuthorId == authorId).ToList();
+            
             if (users != null)
-            {
-                using (ApplicationContext db = new ApplicationContext())
-                {
-                    friends.AddRange(db.Users.Select(x => x).Where(x => x.GuildId == users.First().GuildId));
-                }
-
+            {   
+                friends.AddRange(db.Users.Select(x => x).Where(x => x.GuildId == users.First().GuildId));
+                
 
                 var matches = _api.MatchV5.GetMatchIdsByPUUID(Region.Europe, users.First().Puuid);
 
@@ -110,8 +105,6 @@ namespace DiscordApi.LeagueApi.Services
             {
                 try
                 {
-                    using (ApplicationContext db = new ApplicationContext())
-                    {
                         User findUser = null;
                         foreach (var user in db.Users)
                         {
@@ -137,7 +130,6 @@ namespace DiscordApi.LeagueApi.Services
                         }
                         db.SaveChanges();
                         Console.WriteLine("save db");
-                    }
                 }
                 catch (Exception ex)
                 {
@@ -161,11 +153,9 @@ namespace DiscordApi.LeagueApi.Services
                         {
                             Console.WriteLine(matchId);
                             PlayerGameStat playerGameStat = null;
-                            using (ApplicationContext db = new ApplicationContext())
-                            {
-                                playerGameStat = db.PlayerGameStats.FirstOrDefault(x => x.MatchId == matchId &&
-                                x.UserPuuid == puuid);
-                            }
+                            playerGameStat = db.PlayerGameStats.FirstOrDefault(x => x.MatchId == matchId &&
+                            x.UserPuuid == puuid);
+                            
                             if (playerGameStat != null)
                             {
                                 //needFindMatches = false;
@@ -205,18 +195,17 @@ namespace DiscordApi.LeagueApi.Services
                                             PlayerStat playerStat = GetPlayerStat(summonerName, player);
                                             try
                                             {
-                                                using (ApplicationContext db = new ApplicationContext())
+                                               
+                                                PlayerGameStat pgs = new PlayerGameStat()
                                                 {
-                                                    PlayerGameStat pgs = new PlayerGameStat()
-                                                    {
-                                                        MatchId = matchId,
-                                                        GameStat = gameStat,
-                                                        PlayerStat = playerStat,
-                                                        UserPuuid = puuid
-                                                    };
-                                                    db.PlayerGameStats.Add(pgs);
-                                                    db.SaveChanges();
-                                                }
+                                                    MatchId = matchId,
+                                                    GameStat = gameStat,
+                                                    PlayerStat = playerStat,
+                                                    UserPuuid = puuid
+                                                };
+                                                db.PlayerGameStats.Add(pgs);
+                                                db.SaveChanges();
+                                                
                                             }
                                             catch (Exception ex)
                                             {
@@ -235,10 +224,7 @@ namespace DiscordApi.LeagueApi.Services
                     } while (matches.Length != 0 && needFindMatches);
 
                     List<PlayerGameStat> collectionGamesCurPlayer = null;
-                    using (ApplicationContext db = new ApplicationContext())
-                    {
-                        collectionGamesCurPlayer = db.PlayerGameStats.Select(x => x).Where(x => x.User.Puuid == puuid).ToList();
-                    }
+                    collectionGamesCurPlayer = db.PlayerGameStats.Select(x => x).Where(x => x.User.Puuid == puuid).ToList();
                     if (collectionGamesCurPlayer != null)
                         return await Task.FromResult(DrawingChart.DrawAndSave(collectionGamesCurPlayer));
                     return await Task.FromResult("проблема с кол-вом игр");
@@ -432,6 +418,10 @@ namespace DiscordApi.LeagueApi.Services
             }
             return result;
 
+        }
+        public void Dispose()
+        {
+            this.db.Dispose();
         }
     }
 }
