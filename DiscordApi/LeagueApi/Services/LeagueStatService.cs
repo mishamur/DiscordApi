@@ -21,33 +21,29 @@ namespace DiscordApi.LeagueApi.Services
         {
             StringBuilder resultMes = new StringBuilder();
 
-            //////////////////////////////////////////////////
-            List<User> users = null;
+            List<User> user = null;
             List<User> friends = new List<User>();
 
-            users = db.Users.Select(u => u).Where(u => u.AuthorId == authorId).ToList();
+            //достаём из базы объект того пользователя, который ввёл команду получить статистику
+            user = db.Users.Select(u => u).Where(u => u.AuthorId == authorId).ToList();
             
-            if (users != null)
+            if (user != null)
             {   
-                friends.AddRange(db.Users.Select(x => x).Where(x => x.GuildId == users.First().GuildId));
-                
+                //добавляем его и всех его зарегестрированных согильдейцев(в беседе в дискорде) в список
+                friends.AddRange(db.Users.Select(x => x).Where(x => x.GuildId == user.First().GuildId));
 
-                var matches = _api.MatchV5.GetMatchIdsByPUUID(Region.Europe, users.First().Puuid);
-
+                var matches = _api.MatchV5.GetMatchIdsByPUUID(Region.Europe, user.First().Puuid);
+                //для информации           
                 matches.ToList().ForEach(x => Console.WriteLine(x));
 
-                //
+                //получаем последний матч
                 var match = _api.MatchV5.GetMatch(Region.Europe, matches.First());
-                //
-                //
+                
                 Dictionary<string, object>.ValueCollection valueCollection = match._AdditionalProperties.Values;
-                //
 
+                //выбираем только информацию о игре
                 string last = valueCollection.ToList().Last().ToString();
-                //
-                // Console.WriteLine(match._AdditionalProperties.Values.ElementAt(0).GetType());
-
-
+                
                 JsonDocument json = JsonSerializer.Deserialize<JsonDocument>(last);
 
                 JsonElement jsonParticipants;
@@ -55,14 +51,10 @@ namespace DiscordApi.LeagueApi.Services
                 //информация о каждом чемпионе
                 if (isParticipants)
                 {
-                    //Console.WriteLine("jsonParticipants " + jsonParticipants.GetRawText());
                     JsonElement.ArrayEnumerator particArray = jsonParticipants.EnumerateArray();
 
-                    //  particArray.ToList().ForEach(x => Console.WriteLine(x));
-                    //  Console.WriteLine("----------------------------------------------");
-
-
                     List<PlayerStat> playerStats = new List<PlayerStat>();
+                    //пробегаем по всем игрокам в данном матче
                     foreach (var player in particArray)
                     {
                         JsonElement jsonSummName;
@@ -70,11 +62,13 @@ namespace DiscordApi.LeagueApi.Services
                         if (player.TryGetProperty("summonerName", out jsonSummName))
                         {
                             string summonerName = jsonSummName.GetRawText();
-
+                            //перебираем друзей,
                             foreach (var f in friends)
                             {
+                                // если имя в базе данных схоже с именем полученным из api
                                 if (('"' + f.SummName + '"').Equals(summonerName))
                                 {
+                                    //получаем его статистику
                                     PlayerStat playerStat = GetPlayerStat(summonerName, player);
                                     playerStats.Add(playerStat);
                                 }
